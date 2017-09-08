@@ -9,7 +9,7 @@ from PIL import Image
 import pyaudio
 
 class TonePlayer(object):
-    '''Class for playing tones that have been calculated from color'''
+    '''Class for converting lists of color into frequencies, playing them, and saving them as wav files'''
 
     def __init__(self, length=0.2, bitrate=44100, maxFreq=2093.00, minFreq=130.81):
         self.pa = pyaudio.PyAudio()
