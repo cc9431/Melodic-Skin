@@ -7,4 +7,10 @@ I am not the artist in this collaboration, I am the developer, but I believe tha
 
 
 
-* (255, 255, 255)
+*(255, 255, 255)
+
+
+Current todo list:
+* figure out how to effectively remove non-subject colors
+* scale RGB values on frequency range
+* Currently using ad-hoc method for removing white/almost white pixels, needs to be improved
