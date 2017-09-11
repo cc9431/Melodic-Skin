@@ -2,7 +2,7 @@
 # Charlie Calder <cc9431@bard.edu>
 # September 7th 2017
 
-import sys
+import colorsys
 import math
 from PIL import Image, ImageDraw
 import pyaudio
@@ -21,7 +21,8 @@ class TonePlayer(object):
 
     def pixel_to_freq(self, pixel):
         '''Given rgb values, convert those into a frequency on the audible spectrum'''
-        pass
+        (r, g, b) = pixel[1]
+        return colorsys.rgb_to_hsv(r, g, b)
 
 
     def freq_to_tone(self, freq, amplitude=1):
@@ -51,22 +52,6 @@ class TonePlayer(object):
         self.stream.stop_stream()
         self.stream.close()
 
-def test_audio():
-    '''Function to test that the pyaudio side works as it should'''
-    #scale = [130.8, 146.8, 164.8, 174.6, 195.0, 220.0, 246.9, 261.6]
-    scale2 = [400, 800, 500, 900, 700, 800]
-
-    tp = TonePlayer()
-
-    for freq in scale2:
-        tp.freq_to_tone(freq)
-
-    tp.play()
-
-    tp.pa.terminate()
-
-
-
 def swap(tuple_array, i, j):
     tuple_array[i], tuple_array[j] = tuple_array[j], tuple_array[i]
 
@@ -82,7 +67,7 @@ def heapify(tuple_array, end, i):
         swap(tuple_array, i, max_num)
         heapify(tuple_array, end, max_num)
 
-def heap_sort(tuple_array):
+def keyvalue_heap_sort(tuple_array):
     last = len(tuple_array)
     first = last // 2 - 1
     for i in range(first, -1, -1):
@@ -91,40 +76,70 @@ def heap_sort(tuple_array):
         swap(tuple_array, i, 0)
         heapify(tuple_array, i, 0)
 
-def remove_white(self):
-    '''Remove all pixels that have values around (255, 255, 255)'''
-    pass
+def remove_white(array, threshold=110):
+    '''removes any pixel with a color that is similair to the most common color'''
+    top_pixel = array[-1]
+    top_color = top_pixel[1]
+    #top_color = (190, 140, 110)
+    new_array = [(0, 0)]
+    for (cnt, clr) in array:
+        add_item = False
+        for i in xrange(3):
+            add_item = add_item or (abs(top_color[i] - clr[i]) > threshold)
+        if add_item:
+            new_array.append((cnt, clr))
+    return new_array
 
-def find_common_colors(filename):
+def find_common_colors(img):
     '''Given the file name of an image, open it, sort its pixels
     and return a list of the most common non-white pixels'''
-    img = Image.open(filename)
     width, height = img.size
-    pixels = img.getcolors(width * height)
+    pxls = img.getcolors(width * height)
 
     most_common_pixels = []
 
-    heap_sort(pixels)
-    # remove_white(pixels)
+    keyvalue_heap_sort(pxls)
+    pixels = remove_white(pxls)
 
-    for pix in xrange(30):
+    for pix in xrange(len(pixels)/2):
         col_count = pixels[-pix-1]
         col = col_count[1]
-        if col[0] < 250 and col[1] < 250 and col[2] < 250:
-            most_common_pixels.append(pixels[-pix-1])
+        most_common_pixels.append(pixels[-pix-1])
 
     return most_common_pixels
 
 def test_pixel_count():
     '''Test function to make sure pixel counting works'''
-    awesomelist = find_common_colors("test_no_bkgn.jpg")
-
-    im = Image.open("test_no_bkgn.jpg")
-
+    im = Image.open("TestFiles/test_jasmine.jpg")
+    awesomelist = find_common_colors(im)
     draw = ImageDraw.Draw(im)
-    for item in xrange(len(awesomelist)):
-        color_count = awesomelist[item]
-        draw.rectangle([0, item * 20, 300, (item * 20) + 20], color_count[1], (0, 0, 0))
+    tp = TonePlayer()
+    color_size = 20
+
+    print len(awesomelist)
+
+    for item in xrange(im.height/color_size):
+        if item < len(awesomelist):
+            color_count = awesomelist[item]
+            x_y = [0, item * color_size, 300, item * color_size + color_size]
+            draw.rectangle(x_y, color_count[1], (0, 0, 0))
+            print color_count[1], tp.pixel_to_freq(color_count) # print hsv value
     del draw
 
-    im.save("test_no_bkgn_result.jpg")
+    im.save("TestFiles/test_no_bkgn_result2.jpg")
+
+test_pixel_count()
+
+def test_audio():
+    '''Function to test that the pyaudio side works as it should'''
+    #scale = [130.8, 146.8, 164.8, 174.6, 195.0, 220.0, 246.9, 261.6]
+    scale2 = [400, 800, 500, 900, 700, 800]
+
+    tp = TonePlayer()
+
+    for freq in scale2:
+        tp.freq_to_tone(freq)
+
+    tp.play()
+
+    tp.pa.terminate()
