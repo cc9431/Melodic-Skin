@@ -18,6 +18,4 @@ This project is designed to take an image of a person, – preferably with a whi
 
 ------------------------------------------------------------------------------------------------------------
 Current todo list:
-* figure out how to effectively remove non-subject colors
-* scale RGB values on frequency range
-* Currently using ad-hoc method for removing white/almost white pixels, needs to be improved
+* scale RGB values on wavelength range
