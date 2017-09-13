@@ -1,7 +1,9 @@
 # Melodic Skin
 
 required packages: pyaudio, Pillow, math, colorsys
+
 To run: type 'python MelodicSkin.py [name of your file]'
+
 (only run this on .jpg or .png files)
 
 ### This is part of an art project that I am helping a friend to create. 
