@@ -2,22 +2,26 @@
 # Charles Calder <cc9431@bard.edu>
 # September 7th 2017
 
-import colorsys
 import sys
 import math
+import wave
 from PIL import Image, ImageDraw
 import pyaudio
 
 class TonePlayer(object):
-    '''Class for converting lists of color into frequencies,
-    playing them, and saving them as wav files'''
-    MAXFREQ = 2093.00
-    #MINFREQ = 130.81
+    '''Class for all aspects of the code that relate to creating,
+    playing, and saving the data stream of tones created out of the images'''
+    MAXFREQ = 1500.00
     BITRATE = 44100
     DURATION = 0.2
     def __init__(self):
         self.pa = pyaudio.PyAudio()
         self.data = ''
+
+    def pixel_to_tone(self, tup_array):
+        '''Combine multiple functions to turn a list of colors into a list of tones'''
+        for tup_pixel in tup_array:
+            self.freq_to_tone(self.pixel_to_freq(tup_pixel))
 
     def pixel_to_freq(self, tup_pixel):
         '''Given rgb values, convert those into a frequency on the audible spectrum'''
@@ -26,24 +30,18 @@ class TonePlayer(object):
         return val*TonePlayer.MAXFREQ
 
     def freq_to_tone(self, freq, amplitude=1):
-        '''Play a tone given a certain frequency'''
-        # Frequency needs to be between 130.81 - 2093.00 # 261.63 = C4-note.
+        '''Add a datum (one note) to our data given a certain frequency'''
         numOfFrames = int(TonePlayer.BITRATE * TonePlayer.DURATION)
-        data = ''
-        for x in xrange(numOfFrames):
-            data += self.sin_wave(freq, x, amplitude)
+        datum = self.sin_wave(freq, amplitude, numOfFrames)
+        self.data += datum
 
-        self.data += data
-
-    def pixel_to_tone(self, tup_array):
-        '''Combine a few functions to turn a list of colors into a list of tones'''
-        for tup_pixel in tup_array:
-            self.freq_to_tone(self.pixel_to_freq(tup_pixel))
-
-    def sin_wave(self, freq, frame, amplitude):
-        '''Convert a frequency/frame/amplitude into a character for our data stream'''
-        sin = (math.sin(frame / ((TonePlayer.BITRATE / freq) / math.pi)) * 127 + 128)
-        return chr(int(amplitude * sin))
+    def sin_wave(self, freq, amplitude, frame_num):
+        '''Convert a frequency/amplitude/frame number into a tone for our data stream'''
+        chars = ''
+        for frame in xrange(frame_num):
+            sin = (math.sin(frame / ((TonePlayer.BITRATE / freq) / math.pi)) * 127 + 128)
+            chars += chr(int(amplitude * sin))
+        return chars
 
     def test_scale(self):
         '''play a scale to test pyaudio'''
@@ -52,7 +50,7 @@ class TonePlayer(object):
             self.freq_to_tone(freq)
 
     def play(self):
-        '''Play a tone given a stream of data'''
+        '''Play a stream of data'''
         self.stream = self.pa.open(
             format=self.pa.get_format_from_width(1),
             channels=1,
@@ -62,8 +60,17 @@ class TonePlayer(object):
         self.stream.stop_stream()
         self.stream.close()
 
+    def save_wave(self, output_file_name):
+        '''Save the current data stream to a .wav file'''
+        waveFile = wave.open(output_file_name, 'wb')
+        waveFile.setnchannels(1)
+        waveFile.setsampwidth(self.pa.get_sample_size(self.pa.get_format_from_width(1)))
+        waveFile.setframerate(TonePlayer.BITRATE)
+        waveFile.writeframes(self.data)
+        waveFile.close()
+
 class Portrait(object):
-    '''Class for converting images into usable tuple arrays of (count, color)'''
+    '''Class for all aspects of this program that are involved with image processing'''
     def __init__(self, file_path, save_path, array_length=50, thresh=100, col_size=20):
         self.path_to_file = file_path
         self.save_to_file = save_path
@@ -146,12 +153,12 @@ def test(filepath):
     savepath = filepath_minus_extension + "_result.jpg"
 
     tone = TonePlayer()
-    #port = Portrait(filepath, savepath, 150, 120)
-    port = Portrait(filepath, savepath)
+    port = Portrait(filepath, savepath, 150, 120)
 
-    port.analyze(True)
+    port.analyze(True, True)
     tone.pixel_to_tone(port.tuple_array)
-    tone.play()
+    tone.save_wave(filepath_minus_extension + ".wav")
 
 if __name__ == "__main__":
+    # Take the first argument from the command line as the image file to process
     test(str(sys.argv[1]))
