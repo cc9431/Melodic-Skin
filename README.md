@@ -18,4 +18,5 @@ This project is designed to take an image of a person, – preferably with a whi
 
 ------------------------------------------------------------------------------------------------------------
 Current todo list:
-* scale RGB values on wavelength range
+* Fix up MAXFREQ so the notes don't get too high
+* Not certain if rgb value calculation produces enough unique frequencies

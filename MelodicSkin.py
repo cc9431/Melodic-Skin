@@ -12,32 +12,37 @@ class TonePlayer(object):
     '''Class for converting lists of color into frequencies,
     playing them, and saving them as wav files'''
     MAXFREQ = 2093.00
-    MINFREQ = 130.81
+    #MINFREQ = 130.81
     BITRATE = 44100
     DURATION = 0.2
     def __init__(self):
         self.pa = pyaudio.PyAudio()
         self.data = ''
 
-    def pixel_to_freq(self, pixel):
+    def pixel_to_freq(self, tup_pixel):
         '''Given rgb values, convert those into a frequency on the audible spectrum'''
-        return colorsys.rgb_to_hls(pixel[1][0], pixel[1][1], pixel[1][2])
-
+        color = tup_pixel[1]
+        val = (((65536.0*color[0]) + (256.0*color[1]) + color[2])/16777215.0)
+        return val*TonePlayer.MAXFREQ
 
     def freq_to_tone(self, freq, amplitude=1):
         '''Play a tone given a certain frequency'''
         # Frequency needs to be between 130.81 - 2093.00 # 261.63 = C4-note.
-        numOfFrames = int(self.BITRATE * self.DURATION)
+        numOfFrames = int(TonePlayer.BITRATE * TonePlayer.DURATION)
         data = ''
-
         for x in xrange(numOfFrames):
             data += self.sin_wave(freq, x, amplitude)
 
         self.data += data
 
+    def pixel_to_tone(self, tup_array):
+        '''Combine a few functions to turn a list of colors into a list of tones'''
+        for tup_pixel in tup_array:
+            self.freq_to_tone(self.pixel_to_freq(tup_pixel))
+
     def sin_wave(self, freq, frame, amplitude):
         '''Convert a frequency/frame/amplitude into a character for our data stream'''
-        sin = (math.sin(frame / ((self.BITRATE / freq) / math.pi)) * 127 + 128)
+        sin = (math.sin(frame / ((TonePlayer.BITRATE / freq) / math.pi)) * 127 + 128)
         return chr(int(amplitude * sin))
 
     def test_scale(self):
@@ -51,7 +56,7 @@ class TonePlayer(object):
         self.stream = self.pa.open(
             format=self.pa.get_format_from_width(1),
             channels=1,
-            rate=self.BITRATE,
+            rate=TonePlayer.BITRATE,
             output=True)
         self.stream.write(self.data)
         self.stream.stop_stream()
@@ -140,12 +145,13 @@ def test(filepath):
     filepath_minus_extension = filepath[:-4]
     savepath = filepath_minus_extension + "_result.jpg"
 
-    port = Portrait(filepath, savepath, 150, 120)
-    port.analyze(True, True)
+    tone = TonePlayer()
+    #port = Portrait(filepath, savepath, 150, 120)
+    port = Portrait(filepath, savepath)
 
-    #tone = TonePlayer()
-    #for cnt_col in port.tuple_array:
-    #    print cnt_col, tone.pixel_to_freq(cnt_col)
+    port.analyze(True)
+    tone.pixel_to_tone(port.tuple_array)
+    tone.play()
 
 if __name__ == "__main__":
     test(str(sys.argv[1]))
