@@ -13,7 +13,7 @@ class TonePlayer(object):
     playing, and saving the data stream of tones created out of the images'''
     MAXFREQ = 1500.00
     BITRATE = 44100
-    DURATION = 0.2
+    DURATION = 0.1
     def __init__(self):
         self.pa = pyaudio.PyAudio()
         self.data = ''
