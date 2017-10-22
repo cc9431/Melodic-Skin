@@ -7,13 +7,14 @@ import math
 import wave
 from PIL import Image, ImageDraw
 import pyaudio
+import random
 
 class TonePlayer(object):
     '''Class for all aspects of the code that relate to creating,
     playing, and saving the data stream of tones created out of the images'''
     MAXFREQ = 1500.00
     BITRATE = 44100
-    DURATION = 0.1
+    DURATION = 0.2
     def __init__(self):
         self.pa = pyaudio.PyAudio()
         self.data = ''
@@ -98,7 +99,7 @@ class Portrait(object):
         for (cnt, clr) in self.tuple_array:
             add_item = False
             for i in xrange(3):
-                add_item = add_item or (abs(top_color[i] - clr[i]) > self.threshold)
+                add_item = add_item or (abs(top_color[i] - clr[i]) > (self.threshold))
             if add_item:
                 new_array.append((cnt, clr))
         self.tuple_array = new_array
@@ -111,13 +112,15 @@ class Portrait(object):
             length = len(self.tuple_array)
         for item in xrange(length):
             count_color = self.tuple_array[item]
-            x_y = [0, item * self.color_size, 300, item * self.color_size + self.color_size]
+            x_y = [0, item * self.color_size, 1000, item * self.color_size + self.color_size]
             draw.rectangle(x_y, count_color[1])#, (0, 0, 0))
         del draw
         self.img.save(self.save_to_file)
 
     def resize(self):
         '''Resize our tuple array'''
+        self.tuple_array = [self.tuple_array[x] for x in xrange(self.length + 2000)]
+        random.shuffle(self.tuple_array)
         self.tuple_array = [self.tuple_array[x] for x in xrange(self.length)]
 
     def swap(self, i, j):
@@ -150,10 +153,11 @@ class Portrait(object):
 def test(filepath):
     '''Function to test that the pyaudio and color analysis sides work as they should'''
     filepath_minus_extension = filepath.split(".")[0]
-    savepath = filepath_minus_extension + "_result.jpg"
+    extension = filepath.split(".")[1]
+    savepath = filepath_minus_extension + "_result." + extension
 
     tone = TonePlayer()
-    port = Portrait(filepath, savepath, 150, 120)
+    port = Portrait(filepath, savepath, 150, 95, 40)
 
     port.analyze(True, True)
     tone.pixel_to_tone(port.tuple_array)
