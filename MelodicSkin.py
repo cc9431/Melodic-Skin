@@ -152,8 +152,7 @@ class Portrait(object):
 
 def test(filepath):
     '''Function to test that the pyaudio and color analysis sides work as they should'''
-    filepath_minus_extension = filepath.split(".")[0]
-    extension = filepath.split(".")[1]
+    filepath_minus_extension, extension = filepath.split(".")
     savepath = filepath_minus_extension + "_result." + extension
 
     tone = TonePlayer()
