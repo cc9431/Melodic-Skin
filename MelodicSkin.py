@@ -12,12 +12,14 @@ import random
 class TonePlayer(object):
     '''Class for all aspects of the code that relate to creating,
     playing, and saving the data stream of tones created out of the images'''
-    MAXFREQ = 1500.00
+    MAXFREQ = 200.00
+    MINFREQ = 200.00
     BITRATE = 44100
-    DURATION = 0.2
-    def __init__(self):
+    DURATION = 0
+    def __init__(self, dur):
         self.pa = pyaudio.PyAudio()
         self.data = ''
+        TonePlayer.DURATION = dur
 
     def pixel_to_tone(self, tup_array):
         '''Combine multiple functions to turn a list of colors into a list of tones'''
@@ -28,7 +30,7 @@ class TonePlayer(object):
         '''Given rgb values, convert those into a frequency on the audible spectrum'''
         color = tup_pixel[1]
         val = (((65536.0*color[0]) + (256.0*color[1]) + color[2])/16777215.0)
-        return val*TonePlayer.MAXFREQ
+        return val*TonePlayer.MAXFREQ + TonePlayer.MINFREQ
 
     def freq_to_tone(self, freq, amplitude=1):
         '''Add a datum (one note) to our data given a certain frequency'''
@@ -93,13 +95,11 @@ class Portrait(object):
 
     def remove_white(self):
         '''removes any pixel with a color that is similair to the most common color'''
-        top_color = self.tuple_array[0][1]
-        #print top_color
+        #top_color = self.tuple_array[0][1]
+        top_color = (255,255,255,255)
         new_array = []
-        for (cnt, clr) in self.tuple_array:
-            add_item = False
-            for i in xrange(3):
-                add_item = add_item or (abs(top_color[i] - clr[i]) > (self.threshold))
+        for (cnt, clr) in self.tuple_array:                 
+            add_item = (abs(top_color[2] - clr[2]) > (self.threshold))
             if add_item:
                 new_array.append((cnt, clr))
         self.tuple_array = new_array
@@ -155,12 +155,12 @@ def test(filepath):
     filepath_minus_extension, extension = filepath.split(".")
     savepath = filepath_minus_extension + "_result." + extension
 
-    tone = TonePlayer()
-    port = Portrait(filepath, savepath, 150, 95, 40)
+    tone = TonePlayer(2)
+    port = Portrait(filepath, savepath, 10, 30, 10)
 
     port.analyze(True, True)
     tone.pixel_to_tone(port.tuple_array)
-    tone.save_wave(filepath_minus_extension + ".wav")
+    tone.save_wave(filepath_minus_extension + "Low.wav")
 
 if __name__ == "__main__":
     # Take the first argument from the command line as the image file to process
